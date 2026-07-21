@@ -1,0 +1,20 @@
+# Cluster Updates Evaluation Framework Dependencies
+
+# LightSpeed Evaluation Framework (core dependency)
+# Install from GitHub at specific version tag
+# To update: change the tag to the desired release version
+git+https://github.com/lightspeed-core/lightspeed-evaluation.git@v0.7.0
+
+# The lightspeed-evaluation framework includes all necessary dependencies:
+# - ragas (RAG evaluation metrics)
+# - deepeval (conversation-level metrics)
+# - openai (LLM provider)
+# - pandas (data processing)
+# - pyyaml (configuration)
+# - pydantic (data validation)
+# - etc.
+
+# Additional dependencies specific to cluster-updates can be added below:
+# Example:
+# kubernetes>=28.1.0  # If direct Kubernetes API access is needed
+# openshift>=0.13.0   # If OpenShift client library is needed
