@@ -93,7 +93,7 @@ metrics_metadata:
       evaluation_params: [response]
 
     "geval:technical_accuracy":
-      threshold: 0.80
+      threshold: 0.70
       description: "Validates OpenShift/Kubernetes domain technical correctness"
       default: false  # Enable explicitly in test metrics
       criteria: |

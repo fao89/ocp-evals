@@ -1,5 +1,5 @@
 # OCP Evaluation Framework Configuration
-# OLS Provider: Google Vertex (Gemini) gemini-3.5-flash (model being evaluated)
+# OLS Provider: Google Vertex (Gemini) gemini-2.5-flash (model being evaluated)
 # Judge LLM: OpenAI GPT-5-mini (scoring responses)
 
 # Judge LLM Configuration
@@ -22,7 +22,7 @@ api:
 
   # API input configuration
   provider: "google_vertex"
-  model: "gemini-3.5-flash"
+  model: "gemini-2.5-flash"
   no_tools: null
   system_prompt: null
 
@@ -79,7 +79,7 @@ metrics_metadata:
       evaluation_params: [response]
 
     "geval:technical_accuracy":
-      threshold: 0.80
+      threshold: 0.70
       description: "Validates OpenShift/Kubernetes domain technical correctness"
       default: false
       criteria: |

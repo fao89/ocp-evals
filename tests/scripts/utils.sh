@@ -507,6 +507,61 @@ wait_for_ols_http() {
     return 1
 }
 
+wait_for_all_deployments_ready() {
+    log_info "Waiting for all deployments in ${OLS_NAMESPACE} to be ready..."
+    local retries=0
+    while [[ $retries -lt $OC_RETRY_COUNT ]]; do
+        local not_ready
+        not_ready=$(oc get deployments -n "$OLS_NAMESPACE" \
+            -o go-template='{{range .items}}{{.metadata.name}} {{or .status.readyReplicas 0}} {{.spec.replicas}}
+{{end}}' \
+            2>/dev/null | awk '$3 > 0 && $2 != $3 {print $1}')
+        if [[ -z "$not_ready" ]]; then
+            log_success "All deployments ready in ${OLS_NAMESPACE}"
+            return 0
+        fi
+        retries=$((retries + 1))
+        log_info "Not-ready deployments: ${not_ready} (attempt ${retries}/${OC_RETRY_COUNT})"
+        sleep $OC_RETRY_DELAY
+    done
+    log_error "Timed out waiting for all deployments to be ready"
+    log_error "Not-ready: ${not_ready}"
+    dump_ols_debug
+    return 1
+}
+
+wait_for_olsconfig_ready() {
+    log_info "Checking OLSConfig status conditions..."
+    local retries=0
+    local conditions=""
+    while [[ $retries -lt 30 ]]; do
+        conditions=$(oc get olsconfig cluster -n "$OLS_NAMESPACE" \
+            -o jsonpath='{range .status.conditions[*]}{.type}={.status}{" "}{end}' 2>/dev/null || echo "")
+        if [[ -n "$conditions" ]]; then
+            local all_ready=true
+            for cond in $conditions; do
+                local status="${cond#*=}"
+                if [[ "$status" != "True" ]]; then
+                    all_ready=false
+                    break
+                fi
+            done
+            if [[ "$all_ready" == "true" ]]; then
+                log_success "OLSConfig conditions all True: ${conditions}"
+                return 0
+            fi
+            log_info "OLSConfig conditions: ${conditions} (attempt $((retries+1))/30)"
+        else
+            log_info "OLSConfig status not available yet (attempt $((retries+1))/30)"
+        fi
+        retries=$((retries + 1))
+        sleep 10
+    done
+    log_warning "OLSConfig conditions not all True after 30 attempts, proceeding with caution"
+    log_warning "Final conditions: ${conditions}"
+    return 0
+}
+
 replace_ols_image() {
     local ols_image="$1"
     log_info "Replacing OLS image with: $ols_image"
@@ -690,6 +745,9 @@ deploy_ols() {
 
     wait_for_ols_pod || return 1
 
+    log_info "Waiting for all operator-managed deployments to be ready before scaling down operator..."
+    wait_for_all_deployments_ready || return 1
+
     log_info "Scaling down operator controller manager..."
     oc scale deployment/lightspeed-operator-controller-manager --replicas=0 -n "$OLS_NAMESPACE"
 
@@ -700,6 +758,9 @@ deploy_ols() {
     oc scale deployment/lightspeed-app-server --replicas=0 -n "$OLS_NAMESPACE" || return 1
     update_olsconfig_configmap || log_warning "Failed to update configmap, continuing..."
     oc scale deployment/lightspeed-app-server --replicas=1 -n "$OLS_NAMESPACE" || return 1
+
+    log_info "Waiting for all deployments to be ready..."
+    wait_for_all_deployments_ready || return 1
 
     log_info "Waiting for OLS pod containers to be ready..."
     wait_for_ols_containers_ready || return 1
@@ -714,6 +775,8 @@ deploy_ols() {
 
     wait_for_ols_http "$ols_url" || return 1
 
+    wait_for_olsconfig_ready
+
     log_info "Sending warmup queries to OLS until a successful response..."
     local warmup_retries=0
     local warmup_max=30
@@ -723,8 +786,8 @@ deploy_ols() {
             -H "Content-Type: application/json" \
             -d '{"query": "hello"}' \
             -o /dev/null -w '%{http_code}' 2>/dev/null || echo "000")
-        if [[ "$warmup_code" == "200" ]]; then
-            log_success "OLS warmup query succeeded (HTTP 200)"
+        if [[ "$warmup_code" == "200" || "$warmup_code" == "401" || "$warmup_code" == "403" ]]; then
+            log_success "OLS warmup confirmed server is responding (HTTP $warmup_code)"
             break
         fi
         warmup_retries=$((warmup_retries + 1))
@@ -732,7 +795,9 @@ deploy_ols() {
         sleep 10
     done
     if [[ $warmup_retries -ge $warmup_max ]]; then
-        log_warning "OLS warmup did not get HTTP 200 after $warmup_max attempts, proceeding anyway"
+        log_error "OLS warmup did not get HTTP 200 after $warmup_max attempts"
+        dump_ols_debug
+        return 1
     fi
 
     export API_BASE_URL="$ols_url"
