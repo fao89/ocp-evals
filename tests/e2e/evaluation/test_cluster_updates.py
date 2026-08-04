@@ -45,6 +45,7 @@ import pytest
 import yaml
 
 MAX_EVAL_ERROR_RATE_PCT = 15.0
+MIN_PASS_RATE_PCT = 80.0
 
 _CLUSTER_UPDATES_PROVIDERS = (
     "openai",
@@ -220,6 +221,12 @@ def _run_lseval(eval_data: Path, out_dir: Path, system_config: Path) -> None:
         f"{overall['ERROR']}/{overall['TOTAL']} evaluations errored "
         f"(error_rate={overall['error_rate']:.1f}% > "
         f"threshold {MAX_EVAL_ERROR_RATE_PCT}%)."
+    )
+
+    assert overall["pass_rate"] >= MIN_PASS_RATE_PCT, (
+        f"{overall['FAIL']}/{overall['TOTAL']} evaluations failed "
+        f"(pass_rate={overall['pass_rate']:.1f}% < "
+        f"threshold {MIN_PASS_RATE_PCT}%)."
     )
 
 
