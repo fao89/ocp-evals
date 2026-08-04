@@ -1,5 +1,5 @@
 # OCP Evaluation Framework Configuration
-# OLS Provider: Google Vertex (Gemini) gemini-2.5-flash (model being evaluated)
+# OLS Provider: Google Vertex (Gemini) gemini-3.5-flash (model being evaluated)
 # Judge LLM: OpenAI GPT-5-mini (scoring responses)
 
 # Judge LLM Configuration
@@ -8,7 +8,7 @@ llm:
   provider: "openai"
   model: "gpt-5-mini"
   temperature: 1
-  max_tokens: 2048
+  max_tokens: 4096
   timeout: 300
   num_retries: 3
 
@@ -22,7 +22,7 @@ api:
 
   # API input configuration
   provider: "google_vertex"
-  model: "gemini-2.5-flash"
+  model: "gemini-3.5-flash"
   no_tools: null
   system_prompt: null
 
