@@ -38,6 +38,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -253,5 +254,10 @@ def test_cluster_updates(tmp_path: Path, provider: str, tag: str) -> None:
     with open(tmp_eval_data, "w", encoding="utf-8") as fh:
         yaml.dump(conversations, fh)
 
-    out_dir = tmp_path / tag / provider
+    artifact_dir = os.getenv("ARTIFACT_DIR")
+    if artifact_dir:
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        out_dir = Path(artifact_dir) / tag / provider / ts
+    else:
+        out_dir = tmp_path / tag / provider
     _run_lseval(tmp_eval_data, out_dir, _PROVIDER_CONFIGS[provider])
