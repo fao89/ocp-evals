@@ -15,11 +15,11 @@ spec:
           name: llmcreds
         projectID: ad629765-c373-4731-9d69-dc701724c081
         models:
-          - name: openai/gpt-oss-120b
+          - name: ibm/granite-4-h-large
         name: watsonx
         type: watsonx
   ols:
-    defaultModel: openai/gpt-oss-120b
+    defaultModel: ibm/granite-4-h-large
     defaultProvider: watsonx
     deployment:
       replicas: 1
