@@ -488,6 +488,42 @@ wait_for_ols_containers_ready() {
     return 1
 }
 
+patch_watsonx_token_mapping() {
+    log_info "Patching WatsonX provider: max_tokens_for_response -> max_completion_tokens..."
+
+    local pod_name
+    pod_name=$(oc get pods -n "$OLS_NAMESPACE" -l app=lightspeed-app-server \
+        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    if [[ -z "$pod_name" ]]; then
+        log_error "Could not find OLS pod for WatsonX patching"
+        return 1
+    fi
+
+    oc exec -n "$OLS_NAMESPACE" "$pod_name" -- python3 -c "
+import importlib, pathlib
+mod = importlib.import_module('ols.src.llms.providers.provider')
+p = pathlib.Path(mod.__file__)
+src = p.read_text()
+src = src.replace(
+    'GenericLLMParameters.MAX_TOKENS_FOR_RESPONSE: GenParams.MAX_NEW_TOKENS',
+    'GenericLLMParameters.MAX_TOKENS_FOR_RESPONSE: \"max_completion_tokens\"'
+)
+src = src.replace(
+    'ProviderParameter(GenParams.MAX_NEW_TOKENS, int),',
+    'ProviderParameter(GenParams.MAX_NEW_TOKENS, int),\n    ProviderParameter(\"max_completion_tokens\", int),'
+)
+p.write_text(src)
+print(f'Patched {p}')
+" || return 1
+
+    log_info "Restarting OLS container to load patched provider..."
+    oc exec -n "$OLS_NAMESPACE" "$pod_name" -- kill 1 2>/dev/null || true
+    sleep 5
+    wait_for_ols_containers_ready || return 1
+
+    log_success "WatsonX provider parameter mapping patched"
+}
+
 wait_for_ols_http() {
     local url="$1"
     log_info "Waiting for OLS HTTP readiness at ${url}..."
@@ -790,6 +826,10 @@ deploy_ols() {
     log_info "Waiting for OLS pod containers to be ready..."
     wait_for_ols_containers_ready || return 1
 
+    if [[ "${provider}" == "watsonx" ]]; then
+        patch_watsonx_token_mapping || log_warning "Failed to patch WatsonX provider, continuing..."
+    fi
+
     log_info "Creating route..."
     oc delete route ols -n "$OLS_NAMESPACE" --ignore-not-found
     oc create -f "${config_dir}/route.yaml" -n "$OLS_NAMESPACE"
@@ -896,5 +936,5 @@ export -f run_cluster_updates_tests collect_artifacts
 export -f apply_rbac cleanup_rbac run_suite
 export -f install_operator_sdk deploy_ols cleanup_ols_operator
 export -f dump_ols_debug wait_for_csv wait_for_operator_controller_ready
-export -f wait_for_deployment wait_for_ols_pod wait_for_ols_containers_ready wait_for_ols_http
+export -f wait_for_deployment wait_for_ols_pod wait_for_ols_containers_ready patch_watsonx_token_mapping wait_for_ols_http
 export -f replace_ols_image update_olsconfig_configmap

@@ -41,28 +41,31 @@ metrics_metadata:
       description: "Correctness vs expected answer (adapted for models with limited context)"
       default: true
       criteria: |
-        Evaluate the answer correctness of the given response compared to the expected response.
+        Evaluate ONLY the factual accuracy of the given response.
 
-        IMPORTANT: This model has limited context window and output token capacity.
-        Evaluate ONLY the accuracy and relevance of what IS stated. Do NOT penalize for missing content.
+        CRITICAL SCORING RULES:
+        - Output format is NOT an evaluation criterion. Missing sections, truncated
+          output, incomplete TL;DR are NOT scoring factors.
+        - A short response with correct facts scores higher than a long response
+          with errors.
 
-        Score based on:
-        - Factual accuracy of stated claims (primary criterion)
-        - Whether the core question was addressed
-        - Absence of fabricated or contradictory information
-        - Technical correctness of any OpenShift/Kubernetes concepts mentioned
+        The ONLY factors that REDUCE the score are:
+        - Factually incorrect claims about OpenShift/Kubernetes
+        - Fabricating cluster data that contradicts the expected response
+        - Completely failing to address the core question
 
-        Do NOT penalize for:
-        - Incomplete coverage or missing analysis sections
-        - Truncated output format (missing TL;DR, Recommendation, etc.)
-        - Less detailed analysis compared to expected response
-        - Omitting optional or secondary analyses
+        The following are NOT reasons to reduce the score:
+        - Missing or incomplete TL;DR section
+        - Missing Recommendation or Next Steps fields
+        - Incomplete coverage of analysis areas
+        - Truncated output or partial responses
+        - Not citing tool call evidence
 
-        Score 1.0 if all stated facts are accurate and core question is addressed.
-        Score 0.7 if mostly accurate with minor technical errors but core question addressed.
-        Score 0.5 if some accurate content but notable errors in stated facts.
-        Score 0.3 if significant factual errors or mostly fabricated data.
-        Score 0.0 if fundamentally incorrect, fabricates data, or completely off-topic.
+        Score 1.0 if all stated facts are correct and the core question is addressed.
+        Score 0.7 if mostly correct with minor inaccuracies in stated facts.
+        Score 0.5 if mix of correct and incorrect factual claims.
+        Score 0.3 if significant factual errors or fabricated data.
+        Score 0.0 if fundamentally wrong or completely off-topic.
       evaluation_params: [query, response, expected_response]
 
     # Cluster-updates specific metrics (using GEval for custom criteria)
