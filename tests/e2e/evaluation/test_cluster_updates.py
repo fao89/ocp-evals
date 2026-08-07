@@ -7,7 +7,7 @@ in the same file under ``api``.
 Tests are parametrized by **tag** (from ``evaluation_data.yaml``) and **provider**, so each
 conversation group is a separate pytest test case with its own pass/fail.
 
-Provider matrix: openai, google_vertex, google_vertex_anthropic, watsonx.
+Provider matrix: openai, google_vertex, google_vertex_anthropic, watsonx, ollama.
 
 When ``PROVIDER`` is set to a single provider (typical CI), other parametrized providers
 are skipped so the suite does not call OLS with the wrong backend.
@@ -27,7 +27,7 @@ Local usage
        PROVIDER=openai pytest tests/e2e/evaluation/test_cluster_updates.py \
            -m cluster_updates -v
 
-   Or run all providers (when PROVIDER is unset, all 4 run)::
+   Or run all providers (when PROVIDER is unset, all 5 run)::
 
        pytest tests/e2e/evaluation/test_cluster_updates.py -m cluster_updates -v
 """
@@ -52,6 +52,7 @@ _CLUSTER_UPDATES_PROVIDERS = (
     "google_vertex",
     "google_vertex_anthropic",
     "watsonx",
+    "ollama",
 )
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
@@ -63,6 +64,7 @@ _PROVIDER_CONFIGS: dict[str, Path] = {
     "google_vertex": CONFIG_DIR / "system_google_vertex.yaml",
     "google_vertex_anthropic": CONFIG_DIR / "system_google_vertex_anthropic.yaml",
     "watsonx": CONFIG_DIR / "system_watsonx.yaml",
+    "ollama": CONFIG_DIR / "system_ollama.yaml",
 }
 
 

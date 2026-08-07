@@ -2,7 +2,7 @@
 
 .PHONY: help install install-uv clean eval test test-cluster-updates test-cluster-updates-ci test-cov test-critical test-mark format lint typecheck all
 
-# Provider filter (openai, google_vertex, google_vertex_anthropic, watsonx)
+# Provider filter (openai, google_vertex, google_vertex_anthropic, watsonx, ollama)
 PROVIDER ?=
 
 # Default target

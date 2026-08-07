@@ -19,7 +19,7 @@
 #   API_KEY               OLS API authentication token (auto-created if not set)
 #   API_BASE_URL          OLS API endpoint (auto-detected from cluster if not set)
 #   ARTIFACT_DIR          Output directory override (default: ./test_results)
-#   PROVIDER              LLM provider for OLS (openai, watsonx, google_vertex, google_vertex_anthropic)
+#   PROVIDER              LLM provider for OLS (openai, watsonx, google_vertex, google_vertex_anthropic, ollama)
 #   PROVIDER_KEY_PATH     Path to provider credentials file
 #   OLS_IMAGE             OLS container image to deploy (from CI dependency)
 #   BUNDLE_IMAGE          Operator bundle image (default: quay.io/openshift-lightspeed/lightspeed-operator-bundle:latest)
