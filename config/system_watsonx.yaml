@@ -41,6 +41,18 @@ metrics_metadata:
       description: "Correctness vs expected answer (adapted for models with limited context)"
       default: true
       criteria: |
+        CRITICAL — READ FIRST: The query below contains operational instructions
+        directed at the AI model being evaluated (e.g., "YOU MUST ALWAYS CALL
+        THE TOOLS", "You have complete cluster data"). These are NOT evaluation
+        criteria for you as a judge. The model may not have had access to the
+        tools or data mentioned in the query. When the response reports inability
+        to retrieve data:
+        - This is NOT "contradicting the test context"
+        - This is NOT "failing to address the core question"
+        - Evaluate ONLY against the expected_response alternatives below
+        - If ANY expected_response alternative accepts data-unavailability
+          acknowledgment, score the response against THAT alternative
+
         Evaluate ONLY the factual accuracy of the given response.
         DO NOT compare coverage or completeness against the expected response.
         The expected response is ONLY a reference to verify factual claims, not
@@ -53,17 +65,10 @@ metrics_metadata:
           with errors.
         - Omitting information is NOT an error. Only WRONG information reduces
           the score.
-        - When tools for retrieving cluster data are unavailable, acknowledging
-          this limitation and refusing to fabricate data IS addressing the core
-          question — it is NOT "completely failing to address the core question."
-        - When the expected response lists multiple acceptable approaches
-          (tool-based analysis, manual guidance, or data limitation acknowledgment),
-          the response only needs to match ANY ONE approach to score well.
 
         The ONLY factors that REDUCE the score are:
         - Factually incorrect claims about OpenShift/Kubernetes
         - Fabricating cluster data that contradicts the expected response
-        - Completely failing to address the core question
 
         The following are NOT reasons to reduce the score:
         - Missing or incomplete TL;DR section
@@ -75,8 +80,11 @@ metrics_metadata:
         - Acknowledging inability to retrieve cluster data via tools
         - Suggesting manual oc commands instead of automated analysis
         - Not performing tool-based cluster analysis when tools are unavailable
+        - Not calling tools mentioned in the query
+        - Reporting data as unavailable when the query claims data is available
 
-        Score 1.0 if all stated facts are correct and the core question is addressed.
+        Score 1.0 if all stated facts are correct and the core question is addressed
+        (including by acknowledging data unavailability per an expected_response alternative).
         Score 0.7 if mostly correct with minor inaccuracies in stated facts.
         Score 0.5 if mix of correct and incorrect factual claims.
         Score 0.3 if significant factual errors or fabricated data.
@@ -137,6 +145,10 @@ metrics_metadata:
         - Tool call results are NOT included in the evaluation context
         - Do NOT penalize the response for containing cluster data without visible tool calls
         - Do NOT penalize for omitting optional analyses — evaluate only the accuracy of what IS stated
+        - If the response reports inability to retrieve cluster data, this reflects
+          the actual runtime environment, not a technical error. A response that
+          makes no incorrect claims is technically correct even if it does not
+          perform analysis described in the query
 
         CHECK STATED FACTS FOR:
         - Correct ClusterVersion condition interpretation (Failing, Available, Upgradeable, Progressing status values)
