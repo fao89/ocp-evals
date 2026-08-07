@@ -33,7 +33,7 @@ spec:
       app_log_level: DEBUG
       lib_log_level: DEBUG
       uvicorn_log_level: DEBUG
-    introspectionEnabled: true
+    introspectionEnabled: false
     userDataCollection:
       feedbackDisabled: true
       transcriptsDisabled: true
