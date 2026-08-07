@@ -608,7 +608,7 @@ update_olsconfig_configmap() {
 
     local updated_yaml
     updated_yaml=$(echo "$configmap_yaml" | python3 -c "
-import sys, yaml
+import os, sys, yaml
 
 cm = yaml.safe_load(sys.stdin)
 config_key = 'olsconfig.yaml'
@@ -625,6 +625,14 @@ if 'logging_config' not in olsconfig.get('ols_config', {}):
 olsconfig['ols_config']['logging_config']['lib_log_level'] = 'INFO'
 
 olsconfig['ols_config'].pop('reference_content', None)
+
+provider = os.environ.get('PROVIDER', '')
+if provider == 'watsonx':
+    for prov in olsconfig.get('llm_providers', []):
+        for model in prov.get('models', []):
+            model['context_window_size'] = 32768
+            model.setdefault('parameters', {})['tool_budget_ratio'] = 0.3
+            model.setdefault('parameters', {})['max_tokens_for_response'] = 2047
 
 cm['data'][config_key] = yaml.dump(olsconfig)
 print(yaml.dump(cm))
