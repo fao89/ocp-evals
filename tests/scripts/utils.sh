@@ -492,15 +492,19 @@ patch_watsonx_token_mapping() {
     log_info "Patching WatsonX provider: max_tokens_for_response -> max_completion_tokens..."
 
     local pod_name
-    pod_name=$(oc get pods -n "$OLS_NAMESPACE" -l app=lightspeed-app-server \
-        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+    pod_name=$(oc get pods -n "$OLS_NAMESPACE" \
+        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' \
+        2>/dev/null | grep '^lightspeed-app-server-' | head -1)
     if [[ -z "$pod_name" ]]; then
         log_error "Could not find OLS pod for WatsonX patching"
         return 1
     fi
+    log_info "Found OLS pod: $pod_name"
 
     oc exec -n "$OLS_NAMESPACE" "$pod_name" -- python3 -c "
 import importlib, pathlib
+
+# Patch provider.py: fix mapping and allowed params
 mod = importlib.import_module('ols.src.llms.providers.provider')
 p = pathlib.Path(mod.__file__)
 src = p.read_text()
@@ -510,10 +514,21 @@ src = src.replace(
 )
 src = src.replace(
     'ProviderParameter(GenParams.MAX_NEW_TOKENS, int),',
-    'ProviderParameter(GenParams.MAX_NEW_TOKENS, int),\n    ProviderParameter(\"max_completion_tokens\", int),'
+    'ProviderParameter(\"max_completion_tokens\", int),'
 )
 p.write_text(src)
 print(f'Patched {p}')
+
+# Patch watsonx.py: replace max_new_tokens default with max_completion_tokens
+wmod = importlib.import_module('ols.src.llms.providers.watsonx')
+wp = pathlib.Path(wmod.__file__)
+wsrc = wp.read_text()
+wsrc = wsrc.replace(
+    'GenParams.MAX_NEW_TOKENS: 512,',
+    '\"max_completion_tokens\": 512,'
+)
+wp.write_text(wsrc)
+print(f'Patched {wp}')
 " || return 1
 
     log_info "Restarting OLS container to load patched provider..."
@@ -669,6 +684,7 @@ if provider == 'watsonx':
             model['context_window_size'] = 32768
             model.setdefault('parameters', {})['tool_budget_ratio'] = 0.3
             model.setdefault('parameters', {})['max_tokens_for_response'] = 4096
+    olsconfig['mcp_servers'] = []
 
 cm['data'][config_key] = yaml.dump(olsconfig)
 print(yaml.dump(cm))
@@ -818,6 +834,14 @@ deploy_ols() {
 
     oc scale deployment/lightspeed-app-server --replicas=0 -n "$OLS_NAMESPACE" || return 1
     update_olsconfig_configmap || log_warning "Failed to update configmap, continuing..."
+
+    if [[ "${provider}" == "watsonx" ]]; then
+        log_info "Making OLS container filesystem writable for WatsonX provider patching..."
+        oc patch deployment/lightspeed-app-server --type=json \
+            -p '[{"op":"replace","path":"/spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem","value":false}]' \
+            -n "$OLS_NAMESPACE" || log_warning "Failed to patch securityContext, continuing..."
+    fi
+
     oc scale deployment/lightspeed-app-server --replicas=1 -n "$OLS_NAMESPACE" || return 1
 
     log_info "Waiting for all deployments to be ready..."

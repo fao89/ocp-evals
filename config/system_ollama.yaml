@@ -42,12 +42,17 @@ metrics_metadata:
       default: true
       criteria: |
         Evaluate ONLY the factual accuracy of the given response.
+        DO NOT compare coverage or completeness against the expected response.
+        The expected response is ONLY a reference to verify factual claims, not
+        a checklist of required content.
 
         CRITICAL SCORING RULES:
         - Output format is NOT an evaluation criterion. Missing sections, truncated
           output, incomplete TL;DR are NOT scoring factors.
         - A short response with correct facts scores higher than a long response
           with errors.
+        - Omitting information is NOT an error. Only WRONG information reduces
+          the score.
 
         The ONLY factors that REDUCE the score are:
         - Factually incorrect claims about OpenShift/Kubernetes
@@ -60,6 +65,7 @@ metrics_metadata:
         - Incomplete coverage of analysis areas
         - Truncated output or partial responses
         - Not citing tool call evidence
+        - Fewer details than the expected response
 
         Score 1.0 if all stated facts are correct and the core question is addressed.
         Score 0.7 if mostly correct with minor inaccuracies in stated facts.
