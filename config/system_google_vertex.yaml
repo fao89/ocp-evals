@@ -34,7 +34,26 @@ metrics_metadata:
     "custom:answer_correctness":
       threshold: 0.7
       description: "Correctness vs expected answer using custom LLM evaluation"
+      default: false
+
+    "geval:answer_correctness":
+      threshold: 0.7
+      description: "Correctness vs expected answer using GEval"
       default: true
+      criteria: |
+        Evaluate the answer correctness of the given response compared to the expected response.
+
+        Consider:
+        - Factual accuracy compared to expected response
+        - Completeness of information
+        - Alignment with expected response
+        - Absence of contradictory information
+
+        Score 1.0 if response is factually correct, complete, and well-aligned with expected response.
+        Score 0.7 if mostly correct with minor gaps or omissions.
+        Score 0.4 if partially correct but with significant omissions or inaccuracies.
+        Score 0.0 if fundamentally incorrect or contradicts expected response.
+      evaluation_params: [query, response, expected_response]
 
     # Cluster-updates specific metrics (using GEval for custom criteria)
     "geval:condition_status_accuracy":

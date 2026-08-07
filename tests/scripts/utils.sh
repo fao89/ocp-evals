@@ -632,7 +632,7 @@ if provider == 'watsonx':
         for model in prov.get('models', []):
             model['context_window_size'] = 32768
             model.setdefault('parameters', {})['tool_budget_ratio'] = 0.3
-            model.setdefault('parameters', {})['max_tokens_for_response'] = 2047
+            model.setdefault('parameters', {})['max_tokens_for_response'] = 4096
 
 cm['data'][config_key] = yaml.dump(olsconfig)
 print(yaml.dump(cm))
@@ -641,6 +641,23 @@ print(yaml.dump(cm))
     oc delete configmap olsconfig -n "$OLS_NAMESPACE"
     echo "$updated_yaml" | oc apply -f - -n "$OLS_NAMESPACE"
     log_success "olsconfig configmap updated"
+
+    if [[ "${PROVIDER:-}" == "watsonx" ]]; then
+        log_info "Verifying WatsonX model parameters in configmap..."
+        local verify_result
+        verify_result=$(oc get cm/olsconfig -n "$OLS_NAMESPACE" -o jsonpath='{.data.olsconfig\.yaml}' | python3 -c "
+import sys, yaml
+cfg = yaml.safe_load(sys.stdin)
+for p in cfg.get('llm_providers', []):
+    for m in p.get('models', []):
+        params = m.get('parameters', {})
+        tbr = params.get('tool_budget_ratio', 'MISSING')
+        mtr = params.get('max_tokens_for_response', 'MISSING')
+        cws = m.get('context_window_size', 'MISSING')
+        print(f'tool_budget_ratio={tbr} max_tokens_for_response={mtr} context_window_size={cws}')
+") 2>/dev/null || true
+        log_info "ConfigMap verification: ${verify_result:-unable to read}"
+    fi
 }
 
 deploy_ols() {

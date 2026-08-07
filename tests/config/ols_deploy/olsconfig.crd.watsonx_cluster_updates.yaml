@@ -16,6 +16,10 @@ spec:
         projectID: ad629765-c373-4731-9d69-dc701724c081
         models:
           - name: openai/gpt-oss-120b
+            contextWindowSize: 32768
+            parameters:
+              maxTokensForResponse: 4096
+              toolBudgetRatio: 0.3
         name: watsonx
         type: watsonx
   ols:

@@ -20,7 +20,7 @@
       of keys]\n- **Upgrade blocked**: [Yes | No — only \"Yes\" if a hard blocker per definition above is present]\n- **Upgrade blockers**: [specific list with status field values, or \"No blockers\"]\n- **Conditional risks to acknowledge**: [risk names with target versions, or \"None\"]\n- **Unhealthy ClusterOperators**: [count and names with the failing condition]\n- **Degraded MCPs**: [count and names with failing condition]\n- **Paused MCPs**: [names if any]\n- **Node issues**: [count of NotReady or pressure-affected nodes with names]\n- **Resource pressure**: [nodes with >90% CPU or memory]\n- **User workload PDBs blocking drain**: [count with namespace/name]\n- **Pending node CSRs**: [count if >= 5, else omit or \"None significant\"]\n- **Deprecated APIs in use**: [count removed in target, with API names]\n- **Layered operator issues**: [count of unhealthy Subscriptions]\n- **Recent events**: [count of upgrade-relevant errors/warnings in last 30 min]\n- **Active alerts**: [count of critical/warning, skip if unavailable]\n- **Configuration issues**: [overrides or capability concerns]\n- **Recommendation**: [Proceed with upgrade | Address warnings first | Blocked — resolve listed issues]\n</output_format>"
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 # Console prompt: console/frontend/packages/console-shared/src/components/cluster-updates/prompts/precheck-specific.ts
 - conversation_group_id: conv_002
   tag: cluster-updates-critical
@@ -38,7 +38,7 @@
       - If conditional risks apply: Explain ALL risks across the upgrade path and provide comprehensive mitigation guidance\n\n**Upgrade path summary**:\n- List ALL versions with conditional update risks between the current and target versions\n- For multi-hop upgrades, clarify that risks at intermediate versions will be encountered\n- Provide consolidated recommendation considering ALL risks in the path, not just target version\n\nIf the target version is not available, recommend the closest available version and analyze risks for that path instead.\n\n## TL;DR\n- **Current version**: [from status.desired.version]\n- **Target version**: [from latest availableUpdate]\n- **Data completeness**: [Complete | Partial | Limited]\n- **Target available**: [Yes in availableUpdates / Yes in conditionalUpdates with risks / No]\n- **Upgrade path**: [current → target, list intermediate versions if applicable]\n- **Conditional risks in upgrade path**: [Total count of risk conditions across ALL versions in upgrade path, or \"None\"]\n- **Versions with risks**: [List versions in upgrade path that have conditional update risks, e.g., \"4.21.18, 4.21.20\" or \"None\"]\n- **Risks apply to cluster**: [Yes/No - if ANY conditional risks in upgrade path apply to this cluster configuration]\n- **Risk severity**: [If risks exist: Blocker / Requires Planning / Minor Concern / Does Not Apply]\n- **Target channels**: [Channels for target version if available]\n- **Current channel**: [spec.channel from ClusterVersion]\n- **Cincinnati health**: [Update service status, e.g., \"Default service healthy (RetrievedUpdates=True)\" or \"Custom upstream: URL (status)\"]\n- **Upgrade blocked**: [Yes if blocked / No if not blocked - ONLY report \"Yes\" if: Upgradeable condition has status=\"False\" OR Failing condition has status=\"True\" OR operators have Available status=\"False\" or Upgradeable status=\"False\"]\n- **Upgrade blockers**: [if blockers exist with specific reason - MUST include the actual status field value you read, e.g., \"Upgradeable condition status=False: reason message\" OR \"No blockers - all conditions healthy\"]\n- **Unhealthy ClusterOperators**: [count and names if any]\n- **User workload PDBs**: [count of problematic NON-OpenShift PDBs]\n- **Degraded MCPs**: [count and names if any]\n- **Node issues**: [count of NotReady nodes if any, include Ready=False reason]\n- **Resource pressure**: [nodes with >90% CPU or memory usage]\n- **Recent events**: [count of error/warning events in last 30 min, user-friendly summary]\n- **Active alerts**: [count of critical/warning alerts, skip if tool unavailable]\n- **Recommendation**: [Proceed with upgrade | Address risks/warnings first | Blocked - resolve issues | Target not available - use closest version instead]\n</output_format>"
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 # Console prompt: console/frontend/packages/console-shared/src/components/cluster-updates/prompts/precheck-no-updates.ts
 - conversation_group_id: conv_003
   tag: cluster-updates-critical
@@ -54,7 +54,7 @@
       - **Degraded operators**: [Any operators with Available=False or Degraded=True]\n- **Progressing operators**: [Operators currently updating or progressing]\n- **Infrastructure**: [Overall cluster-level status and configuration]\n**Administrator action items**\n- **Immediate**: [Issues requiring prompt attention]\n- **Maintenance**: [Items to address during maintenance windows]\n- **Monitoring**: [Things to watch for trends]\n**Future update readiness**\n[Assessment of readiness for next OpenShift updates]\n\n## TL;DR\n- **Overall status**: [Healthy | Minor issues | Attention needed]\n- **Data completeness**: [Complete | Partial | Limited]\n- **System health**: [Count of healthy vs degraded operators]\n- **Core platform**: [Status of essential operators: console, authentication, ingress, etc.]\n- **Degraded components**: [Count and names of any unhealthy operators]\n- **User impact**: [Any operator issues affecting workloads]\n- **Action items**: [Count of items needing administrator attention]\n- **Update readiness**: [Ready | Operator issues need resolution]\n- **Next review**: [Recommended reassessment timeframe]\n</output_format>"
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:technical_accuracy
 # Console prompt: console/frontend/packages/console-shared/src/components/cluster-updates/prompts/progress.ts
 - conversation_group_id: conv_004
@@ -72,7 +72,7 @@
       during upgrade, if available]\n- **Timeline analysis**:\n * Upgrade started: [Find the FIRST entry in status.history where state=\"Partial\" - this is the CURRENT upgrade. Use ONLY its startedTime field. Convert from ISO timestamp (e.g., \"2026-05-04T16:59:26Z\") to human-readable (e.g., \"May 4, 2026, 4:59:26 PM UTC\"). DO NOT use startedTime from Completed entries!]\n * Elapsed time: [Calculate duration from the Partial entry's startedTime to current time in human-readable format]\n * Current progress: [X% complete based on operator completion ratio]\n * Estimated completion: [Time remaining calculation based on progress rate]\n * Progress rate: [Assessment: \"On track\", \"Ahead of schedule\", or \"Behind schedule\" compared to typical upgrade window]\n\n## TL;DR\n- **Progress**: [X% complete - (Updated Operators / Total Operators) * 100]\n- **Data completeness**: [Complete | Partial | Limited]\n- **Target version**: [from status.desired.version with release info if available]\n- **Target channels**: [Available channels for target release]\n- **Upgrade duration**: [Elapsed time from upgrade start]\n- **Status**: [On track | Delayed | Issues detected]\n- **Updated components**: [X of Y operators at target version (Z% complete)]\n- **Pending components**: [X updating + Y pending operators]\n- **Historical comparison**: [How current upgrade compares to previous ones]\n- **Issues**: [0 operators with issues if any, otherwise \"No problems requiring immediate attention\"]\n- **Resource pressure**: [Node CPU/memory status - any nodes >90% usage?]\n- **MCP Status**: [MachineConfigPool progress - all updating normally?]\n- **Recent events**: [Count of warning events in last 30 min, user-friendly summary]\n- **Alerts**: [Warning/critical alerts during upgrade, if available]\n- **ETA**: [Estimated time remaining based on current progress rate]\n- **Action required**: [Continue monitoring | Investigate delays | Address operator issues]\n</output_format>"
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 # Console prompt: console/frontend/packages/console-shared/src/components/cluster-updates/prompts/troubleshoot.ts
 - conversation_group_id: conv_005
   tag: cluster-updates-critical
@@ -92,7 +92,7 @@
       approach based on actual errors found]\n</output_format>"
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:technical_accuracy
 - conversation_group_id: conv_006
   tag: cluster-updates-conversation
@@ -120,7 +120,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_007
   tag: cluster-updates-format
   turns:
@@ -143,7 +143,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_008
   tag: cluster-updates-blockers
   turns:
@@ -171,7 +171,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:actionable_guidance
 - conversation_group_id: conv_009
   tag: cluster-updates-risks
@@ -197,7 +197,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:technical_accuracy
 - conversation_group_id: conv_010
   tag: cluster-updates-path
@@ -208,7 +208,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_011
   tag: cluster-updates-troubleshoot
   turns:
@@ -219,7 +219,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_012
   tag: cluster-updates-conversation
   turns:
@@ -236,7 +236,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
   - expected_response: 'Response should explain version differences:
 
       - Describe what typically differs between patch versions
@@ -252,7 +252,7 @@
       '
     turn_id: turn_002
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_013
   tag: cluster-updates-no-updates
   turns:
@@ -262,7 +262,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_014
   tag: cluster-updates-channels
   turns:
@@ -273,7 +273,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_015
   tag: cluster-updates-mcp
   turns:
@@ -283,7 +283,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_016
   tag: cluster-updates-pdb
   turns:
@@ -308,7 +308,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_017
   tag: cluster-updates-eus
   turns:
@@ -318,7 +318,7 @@
       '
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_018
   tag: cluster-updates-conditions
   turns:
@@ -338,7 +338,7 @@
     query: "I see my ClusterVersion has these conditions:\n\n- type: Available\n  status: \"True\"\n- type: Failing\n  status: \"False\"\n- type: Progressing\n  status: \"False\"\n- type: Upgradeable\n  status: \"True\"\n\nIs my cluster healthy and ready for upgrade?\n"
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:condition_status_accuracy
 - conversation_group_id: conv_019
   tag: cluster-updates-conditions
@@ -359,7 +359,7 @@
     query: "I'm checking my cluster operators before upgrading. The authentication operator shows:\n\nConditions:\n- type: Available\n  status: \"True\"\n- type: Progressing\n  status: \"False\"\n- type: Degraded\n  status: \"False\"\n- type: Upgradeable\n  status: \"True\"\n\nCan I proceed with the cluster upgrade, or is this operator blocking it?\n"
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:condition_status_accuracy
 - conversation_group_id: conv_020
   tag: cluster-updates-upgrade-exploration-multi-turn
@@ -368,17 +368,17 @@
     query: Are there any updates available for my cluster?
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
   - expected_response: I currently don't have access to the specific details of your cluster's configuration or the latest available updates. To provide accurate information, please share the current version of your OpenShift cluster or any specific update channel you are interested in.
     query: Tell me more about the latest available update.
     turn_id: turn_002
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
   - expected_response: "To start the upgrade to a specific version of your OpenShift cluster, you can use the following command:\n\n```terminal\n$ oc adm upgrade --to=<version>\n```\n\nReplace `<version>` with the desired version number you want to upgrade to. \n\nIf you want to upgrade to the latest version, you can use:\n\n```terminal\n$ oc adm upgrade --to-latest=true\n```\n\nMake sure to check the compatibility of the version you are upgrading to and ensure that your cluster is subscribed to a stable, eus, or fast channel for production clusters."
     query: How do I start the upgrade to that version?
     turn_id: turn_003
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:actionable_guidance
 - conversation_group_id: conv_021
   tag: cluster-updates-operator-health-multi-turn
@@ -394,7 +394,7 @@
     query: Are all my cluster operators healthy?
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
   - expected_response: 'The etcd operator in OpenShift is responsible for managing etcd clusters, which are key-value stores used for storing configuration data and state information for Kubernetes. Here are some key points about the etcd operator:
 
 
@@ -420,7 +420,7 @@
     query: Tell me about the etcd operator.
     turn_id: turn_002
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
   - expected_response: 'The kube-apiserver is a critical component of the Kubernetes architecture, serving as the front-end for the Kubernetes control plane. Here are some key aspects of the kube-apiserver:
 
 
@@ -449,7 +449,7 @@
     query: What about kube-apiserver?
     turn_id: turn_003
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
 - conversation_group_id: conv_022
   tag: cluster-updates-readiness-assessment-multi-turn
   turns:
@@ -475,7 +475,7 @@
     query: Is my cluster ready for an upgrade?
     turn_id: turn_001
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:technical_accuracy
   - expected_response: 'To determine the appropriate version to upgrade to, consider the following:
 
@@ -499,12 +499,12 @@
     query: What version should I upgrade to?
     turn_id: turn_002
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
   - expected_response: "The upgrade process for Red Hat OpenShift Container Platform involves several key steps. Here’s a general walkthrough:\n\n### 1. **Preparation**\n   - **Backup**: Ensure you have a backup of your etcd data.\n   - **Review Release Notes**: Check the release notes for the version you are upgrading to for any breaking changes or important notes.\n   - **Check Compatibility**: Verify that all your Operators and applications are compatible with the new version.\n\n### 2. **Update the Cluster Version**\n   - **Access the CLI**: Use the OpenShift CLI (`oc`) to interact with your cluster.\n   - **Check Current Version**: Run the following command to check your current version:\n     ```bash\n     oc get clusterversion\n     ```\n\n### 3. **Change the Update Channel (if necessary)**\n   - If you need to switch to a different update channel, use:\n     ```bash\n     oc adm upgrade channel <channel>\n     ```\n\n### 4. **Initiate the Upgrade**\n   - **Upgrade Command**: To initiate\
       \ the upgrade, run:\n     ```bash\n     oc adm upgrade\n     ```\n   - This command will check for available updates and apply them.\n\n### 5. **Monitor the Upgrade**\n   - **Check Upgrade Status**: Monitor the upgrade process by checking the status:\n     ```bash\n     oc get clusterversion\n     ```\n   - Ensure that all components are upgrading successfully.\n\n### 6. **Post-Upgrade Tasks**\n   - **Verify Cluster Health**: After the upgrade, check the health of your cluster:\n     ```bash\n     oc get nodes\n     oc get pods --all-namespaces\n     ```\n   - **Update Operators**: Ensure that all Operators are updated to their latest compatible versions.\n\n### 7. **Rollback (if necessary)**\n   - If the upgrade fails or issues arise, you can perform a manual rollback. Refer to the documentation for specific rollback commands.\n\n### 8. **Documentation and Cleanup**\n   - Document the upgrade process and any issues encountered.\n   - Clean up any resources or configurations that are\
       \ no longer needed.\n\n### Important Notes:\n- **Minor Upgrades**: For minor upgrades, you may need to manually modify the `spec.version` in your `ClusterVersion` resource.\n- **Major Upgrades**: For major upgrades, additional manual changes may be required due to potential breaking changes.\n\nIf you have specific details about your current version or any particular concerns, feel free to share!"
     query: Walk me through the upgrade process.
     turn_id: turn_003
     turn_metrics:
-    - custom:answer_correctness
+    - geval:answer_correctness
     - geval:actionable_guidance
